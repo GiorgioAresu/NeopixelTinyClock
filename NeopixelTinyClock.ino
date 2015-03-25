@@ -1,6 +1,7 @@
 #include <TinyWireM.h>
 #include <TinyRTClib.h>
 #include <Adafruit_NeoPixel.h>
+#include <PinChangeInterrupt.h>
 
 #define PIXEL_NUMBER            60 // Neopixel ring length
 #define PIXELS_PIN               1 // Neopixel ring pin
@@ -9,6 +10,7 @@
 #define LDR_PIN                  2 // Analog PIN number
 #define LDR_MIN                 50 // Minimum brightness threshold
 #define LDR_MAX               1000 // maximum brightness threshold
+#define SQW_PIN                  3 // 1Hz square wave pin
 
 RTC_DS1307 rtc;
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(PIXEL_NUMBER, PIXELS_PIN, NEO_GRB + NEO_KHZ800); // ring object
@@ -26,12 +28,17 @@ void setup() {
       }         
   }
   
+  attachPcInterrupt(SQW_PIN, secondPassed, FALLING);
+  
   // Get the current time
   DateTime n = rtc.now(); 
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+}
+
+void secondPassed() {
 }
 
 void adjustBrightness() {
