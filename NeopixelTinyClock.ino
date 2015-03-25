@@ -15,6 +15,10 @@
 RTC_DS1307 rtc;
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(PIXEL_NUMBER, PIXELS_PIN, NEO_GRB + NEO_KHZ800); // ring object
 
+byte hours;
+byte minutes;
+byte seconds;
+
 void setup() {
   ring.begin();
   TinyWireM.begin();
@@ -28,10 +32,16 @@ void setup() {
       }         
   }
   
-  attachPcInterrupt(SQW_PIN, secondPassed, FALLING);
-  
   // Get the current time
-  DateTime n = rtc.now(); 
+  DateTime n = rtc.now();
+  hours = n.hour();
+  if (hours >= 12) {
+    hours -= 12;
+  }
+  minutes = n.minute();
+  seconds = n.second();
+  
+  attachPcInterrupt(SQW_PIN, secondPassed, FALLING);
 }
 
 void loop() {
@@ -39,6 +49,20 @@ void loop() {
 }
 
 void secondPassed() {
+  seconds += 1;
+  if (seconds >= 60) {
+    // Increment minutes
+    seconds = 0;
+    minutes += 1;
+    if (minutes >= 60) {
+      // Increment hours
+      minutes = 0;
+      hours += 1;
+      if (hours >= 12) {
+        hours = 0;
+      }
+    }
+  }
 }
 
 void adjustBrightness() {
