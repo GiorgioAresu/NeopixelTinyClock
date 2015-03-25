@@ -54,12 +54,13 @@ void setup() {
 }
 
 void loop() {
+  adjustBrightness();
   ring.setPixelColor(prevSecondsPixel, 0x000000);
   ring.setPixelColor(prevMinutesPixel, 0x000000);
   ring.setPixelColor(prevHoursPixel, 0x000000);
-  ring.setPixelColor(secondsPixel, 0x000010);
-  ring.setPixelColor(minutesPixel, 0x001000);
-  ring.setPixelColor(hoursPixel, 0x100000);
+  ring.setPixelColor(secondsPixel, 0x0000ff);
+  ring.setPixelColor(minutesPixel, 0x00ff00);
+  ring.setPixelColor(hoursPixel, 0xff0000);
   ring.show();
 }
 
