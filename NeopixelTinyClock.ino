@@ -15,9 +15,18 @@
 RTC_DS1307 rtc;
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(PIXEL_NUMBER, PIXELS_PIN, NEO_GRB + NEO_KHZ800); // ring object
 
-byte hours;
-byte minutes;
+// Raw time
 byte seconds;
+byte minutes;
+byte hours;
+
+// Time mapped to ring
+byte prevSecondsPixel;
+byte prevMinutesPixel;
+byte prevHoursPixel;
+byte secondsPixel;
+byte minutesPixel;
+byte hoursPixel;
 
 void setup() {
   ring.begin();
@@ -34,21 +43,31 @@ void setup() {
   
   // Get the current time
   DateTime n = rtc.now();
+  seconds = n.second();
+  minutes = n.minute();
   hours = n.hour();
   if (hours >= 12) {
     hours -= 12;
   }
-  minutes = n.minute();
-  seconds = n.second();
   
   attachPcInterrupt(SQW_PIN, secondPassed, FALLING);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  ring.setPixelColor(prevSecondsPixel, 0x000000);
+  ring.setPixelColor(prevMinutesPixel, 0x000000);
+  ring.setPixelColor(prevHoursPixel, 0x000000);
+  ring.setPixelColor(secondsPixel, 0x000010);
+  ring.setPixelColor(minutesPixel, 0x001000);
+  ring.setPixelColor(hoursPixel, 0x100000);
+  ring.show();
 }
 
 void secondPassed() {
+  prevSecondsPixel = secondsPixel;
+  prevMinutesPixel = minutesPixel;
+  prevHoursPixel = hoursPixel;
+  
   seconds += 1;
   if (seconds >= 60) {
     // Increment minutes
@@ -62,6 +81,22 @@ void secondPassed() {
         hours = 0;
       }
     }
+  }
+  
+  // Compute mappings from time to leds
+  if (PIXEL_NUMBER != 60) {
+    secondsPixel = map(seconds, 0, 60, 0, PIXEL_NUMBER-1);
+    uint16_t minutesVal = ((uint16_t) minutes) * 60 + (uint16_t) seconds;
+    minutesPixel = map(minutesVal, 0, 3599, 0, PIXEL_NUMBER-1);
+  } else {
+    secondsPixel = seconds;
+    minutesPixel = minutes;
+  }
+  if (PIXEL_NUMBER != 12) {
+    uint16_t hoursVal = ((uint16_t) hours) * 60 + (uint16_t) minutes;
+    hoursPixel = map(hoursVal, 0, 719, 0, PIXEL_NUMBER-1);
+  } else {
+    hoursPixel = hours;
   }
 }
 
