@@ -5,7 +5,7 @@
 
 #define PIXEL_NUMBER            60 // Neopixel ring length
 #define PIXELS_PIN               1 // Neopixel ring pin
-#define PIXELS_MIN_BRIGHTNESS   16 // Minimum brightness
+#define PIXELS_MIN_BRIGHTNESS    4 // Minimum brightness
 #define PIXELS_MAX_BRIGHTNESS  128 // Maximum brightness
 #define LDR_PIN                  2 // Analog PIN number
 #define LDR_MIN                 50 // Minimum brightness threshold
