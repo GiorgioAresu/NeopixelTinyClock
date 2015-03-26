@@ -11,7 +11,7 @@
 #define LDR_MIN                 50 // Minimum brightness threshold
 #define LDR_MAX               1000 // maximum brightness threshold
 #define SQW_PIN                  3 // 1Hz square wave pin
-#define ANIM_DURATION          500 // Duration in ms
+#define ANIM_DURATION         1000 // Duration in ms
 
 RTC_DS1307 rtc;
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(PIXEL_NUMBER, PIXELS_PIN, NEO_GRB + NEO_KHZ800); // ring object
