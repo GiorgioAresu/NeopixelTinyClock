@@ -11,6 +11,7 @@
 #define LDR_MIN                 50 // Minimum brightness threshold
 #define LDR_MAX               1000 // maximum brightness threshold
 #define SQW_PIN                  3 // 1Hz square wave pin
+#define ANIM_DURATION          500 // Duration in ms
 
 RTC_DS1307 rtc;
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(PIXEL_NUMBER, PIXELS_PIN, NEO_GRB + NEO_KHZ800); // ring object
@@ -27,6 +28,10 @@ byte prevHoursPixel;
 byte secondsPixel;
 byte minutesPixel;
 byte hoursPixel;
+
+bool skipFrame;
+
+unsigned long baseTime;
 
 void setup() {
   ring.begin();
@@ -54,17 +59,42 @@ void setup() {
 }
 
 void loop() {
+  skipFrame = false;
+  unsigned long relTime = constrain(millis() - baseTime, (unsigned long)0, (unsigned long)ANIM_DURATION);
+  uint16_t animTime = map(relTime, 0, ANIM_DURATION, 0, 255);
+  
   adjustBrightness();
-  ring.setPixelColor(prevSecondsPixel, 0x000000);
-  ring.setPixelColor(prevMinutesPixel, 0x000000);
-  ring.setPixelColor(prevHoursPixel, 0x000000);
-  ring.setPixelColor(secondsPixel, 0x0000ff);
-  ring.setPixelColor(minutesPixel, 0x00ff00);
-  ring.setPixelColor(hoursPixel, 0xff0000);
-  ring.show();
+  
+  uniformPixelsColor(0x000000);
+  
+  if (prevHoursPixel != hoursPixel) {
+    ring.setPixelColor(prevHoursPixel, 1-animTime, 0, 0);
+    ring.setPixelColor(hoursPixel, animTime, 0, 0);
+  } else {
+    ring.setPixelColor(hoursPixel, 255, 0, 0);
+  }
+  if (prevMinutesPixel != minutesPixel) {
+    ring.setPixelColor(prevMinutesPixel, 0, 1-animTime, 0);
+    ring.setPixelColor(minutesPixel, 0, animTime, 0);
+  } else {
+    ring.setPixelColor(minutesPixel, 0, 255, 0);
+  }
+  if (prevSecondsPixel != secondsPixel) {
+    ring.setPixelColor(prevSecondsPixel, 0, 0, 1-animTime);
+    ring.setPixelColor(secondsPixel, 0, 0, animTime);
+  } else {
+    ring.setPixelColor(secondsPixel, 0, 0, 255);
+  }
+  
+  if (!skipFrame) {
+    ring.show();
+  }
 }
 
 void secondPassed() {
+  byte backupPrevSecondsPixel = prevSecondsPixel;
+  byte backupPrevMinutesPixel = prevMinutesPixel;
+  byte backupPrevHoursPixel = prevHoursPixel;
   prevSecondsPixel = secondsPixel;
   prevMinutesPixel = minutesPixel;
   prevHoursPixel = hoursPixel;
@@ -85,19 +115,30 @@ void secondPassed() {
   }
   
   // Compute mappings from time to leds
-  if (PIXEL_NUMBER != 60) {
-    secondsPixel = map(seconds, 0, 60, 0, PIXEL_NUMBER-1);
-    uint16_t minutesVal = ((uint16_t) minutes) * 60 + (uint16_t) seconds;
-    minutesPixel = map(minutesVal, 0, 3599, 0, PIXEL_NUMBER-1);
+  secondsPixel = (PIXEL_NUMBER == 60) ? seconds : map(seconds, 0, 59, 0, PIXEL_NUMBER-1);
+  uint16_t minutesVal = ((uint16_t) minutes) * 60 + (uint16_t) seconds;
+  minutesPixel = (PIXEL_NUMBER == 60) ? minutes : map(minutesVal, 0, 3599, 0, PIXEL_NUMBER-1);
+  uint16_t hoursVal = ((uint16_t) hours) * 60 + (uint16_t) minutes;
+  hoursPixel = (PIXEL_NUMBER == 12) ? hours : map(hoursVal, 0, 719, 0, PIXEL_NUMBER-1);
+  
+  // Compute baseTime for the animation
+  if (prevSecondsPixel == secondsPixel) {
+    prevSecondsPixel = backupPrevSecondsPixel;
   } else {
-    secondsPixel = seconds;
-    minutesPixel = minutes;
+    baseTime = millis();
+    skipFrame = true;
   }
-  if (PIXEL_NUMBER != 12) {
-    uint16_t hoursVal = ((uint16_t) hours) * 60 + (uint16_t) minutes;
-    hoursPixel = map(hoursVal, 0, 719, 0, PIXEL_NUMBER-1);
-  } else {
-    hoursPixel = hours;
+  if (seconds == 0 && prevMinutesPixel == minutesPixel) {
+    prevMinutesPixel = backupPrevMinutesPixel;
+  }
+  if (minutes == 0 && prevHoursPixel == hoursPixel) {
+    prevHoursPixel = backupPrevHoursPixel;
+  }
+}
+
+void uniformPixelsColor(uint32_t color) {
+  for (uint16_t i=0; i<PIXEL_NUMBER; i++) {
+    ring.setPixelColor(i, color);
   }
 }
 
