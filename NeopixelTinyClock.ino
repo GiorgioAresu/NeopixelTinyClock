@@ -64,19 +64,19 @@ void loop() {
   uniformPixelsColor(0x000000);
   
   if (prevHoursPixel != hoursPixel) {
-    ring.setPixelColor(prevHoursPixel, 1-animTime, 0, 0);
+    ring.setPixelColor(prevHoursPixel, 255-animTime, 0, 0);
     ring.setPixelColor(hoursPixel, animTime, 0, 0);
   } else {
     ring.setPixelColor(hoursPixel, 255, 0, 0);
   }
   if (prevMinutesPixel != minutesPixel) {
-    ring.setPixelColor(prevMinutesPixel, 0, 1-animTime, 0);
+    ring.setPixelColor(prevMinutesPixel, 0, 255-animTime, 0);
     ring.setPixelColor(minutesPixel, 0, animTime, 0);
   } else {
     ring.setPixelColor(minutesPixel, 0, 255, 0);
   }
   if (prevSecondsPixel != secondsPixel) {
-    ring.setPixelColor(prevSecondsPixel, 0, 0, 1-animTime);
+    ring.setPixelColor(prevSecondsPixel, 0, 0, 255-animTime);
     ring.setPixelColor(secondsPixel, 0, 0, animTime);
   } else {
     ring.setPixelColor(secondsPixel, 0, 0, 255);
