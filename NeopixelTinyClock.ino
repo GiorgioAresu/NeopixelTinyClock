@@ -12,6 +12,9 @@
 #define LDR_MAX               1000 // maximum brightness threshold
 #define SQW_PIN                  3 // 1Hz square wave pin
 #define ANIM_DURATION         1000 // Duration in ms
+#define SECS_COLOR        0x0000ff // Seconds indicator color
+#define MINS_COLOR        0x00ff00 // Minutes indicator color
+#define HOURS_COLOR       0xff0000 // Hours indicator color
 
 RTC_DS1307 rtc;
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(PIXEL_NUMBER, PIXELS_PIN, NEO_GRB + NEO_KHZ800); // ring object
@@ -57,34 +60,44 @@ void setup() {
 void loop() {
   skipFrame = false;
   unsigned long relTime = constrain(millis() - baseTime, (unsigned long)0, (unsigned long)ANIM_DURATION);
-  byte animTime = map(relTime, 0, ANIM_DURATION, 0, 255);
+  byte animTimeRaw = map(relTime, 0, ANIM_DURATION, 0, 255);
+  float animTime = animTimeRaw / 255.0;
   
   adjustBrightness();
   
   uniformPixelsColor(0x000000);
   
-  if (prevHoursPixel != hoursPixel) {
-    ring.setPixelColor(prevHoursPixel, ~animTime, 0, 0);
-    ring.setPixelColor(hoursPixel, animTime, 0, 0);
-  } else {
-    ring.setPixelColor(hoursPixel, 255, 0, 0);
-  }
-  if (prevMinutesPixel != minutesPixel) {
-    ring.setPixelColor(prevMinutesPixel, 0, ~animTime, 0);
-    ring.setPixelColor(minutesPixel, 0, animTime, 0);
-  } else {
-    ring.setPixelColor(minutesPixel, 0, 255, 0);
-  }
-  if (prevSecondsPixel != secondsPixel) {
-    ring.setPixelColor(prevSecondsPixel, 0, 0, ~animTime);
-    ring.setPixelColor(secondsPixel, 0, 0, animTime);
-  } else {
-    ring.setPixelColor(secondsPixel, 0, 0, 255);
-  }
+  animationStep(animTime, SECS_COLOR, prevSecondsPixel, secondsPixel);
+  animationStep(animTime, MINS_COLOR, prevMinutesPixel, minutesPixel);
+  animationStep(animTime, HOURS_COLOR, prevHoursPixel, hoursPixel);
   
   if (!skipFrame) {
     ring.show();
   }
+}
+
+void animationStep(float animTime, uint32_t color, byte previousPixel, byte currentPixel) {
+  if (currentPixel == previousPixel) {
+    uint32_t currentPixelColor = color | ring.getPixelColor(currentPixel);
+    ring.setPixelColor(currentPixel, currentPixelColor);
+  } else {
+    // Compute right base color given target color and animation time
+    uint8_t r = color >> 16;
+    uint8_t g = color >> 8;
+    uint8_t b = color >> 0;
+    // Compute respective colors and set them
+    uint32_t previousPixelColor = getRightColorForFrame(r ,g ,b, 1-animTime) | ring.getPixelColor(previousPixel);
+    uint32_t currentPixelColor = getRightColorForFrame(r ,g ,b, animTime) | ring.getPixelColor(currentPixel);
+    ring.setPixelColor(previousPixel, previousPixelColor);
+    ring.setPixelColor(currentPixel, currentPixelColor);
+  }
+}
+
+uint32_t getRightColorForFrame(byte r, byte g, byte b, float animTime) {
+  byte r1 = r * animTime;
+  byte g1 = g * animTime;
+  byte b1 = b * animTime;
+  return ((uint32_t) (r1 * animTime) << 16) | ((uint32_t)g1 << 8) | b1;
 }
 
 void secondPassed() {
