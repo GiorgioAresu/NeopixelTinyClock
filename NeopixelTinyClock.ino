@@ -57,7 +57,7 @@ void setup() {
 void loop() {
   skipFrame = false;
   unsigned long relTime = constrain(millis() - baseTime, (unsigned long)0, (unsigned long)ANIM_DURATION);
-  uint16_t animTime = map(relTime, 0, ANIM_DURATION, 0, 255);
+  byte animTime = map(relTime, 0, ANIM_DURATION, 0, 255);
   
   adjustBrightness();
   
