@@ -39,11 +39,7 @@ void setup() {
   rtc.begin();
 
   if (!rtc.isrunning()) {
-      for(int i = 0; i < 15; i++ ) {
-         ring.setPixelColor(0, 0xff0000);
-         ring.show();
          delay(25000);
-      }         
   }
   
   // Get the current time
