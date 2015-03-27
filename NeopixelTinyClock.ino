@@ -31,6 +31,7 @@ byte prevHoursPixel;
 byte secondsPixel;
 byte minutesPixel;
 byte hoursPixel;
+byte brightness;
 
 bool skipFrame;
 
@@ -65,7 +66,18 @@ void loop() {
   
   adjustBrightness();
   
-  uniformPixelsColor(0x000000);
+  // Set background color
+  if (map(brightness, PIXELS_MIN_BRIGHTNESS, PIXELS_MAX_BRIGHTNESS, 0, 10)<1) {
+    // Really dark environment (<10%)
+    for (uint16_t i=0; i<PIXEL_NUMBER; i++) {
+      // color 3, 6, 9 and 12 hours pixels
+      ring.setPixelColor(i, (i % (PIXEL_NUMBER / 4) == 0) ? 0x808080 : 0);
+    }
+  } else {
+    for (uint16_t i=0; i<PIXEL_NUMBER; i++) {
+      ring.setPixelColor(i, 0);
+    }
+  }
   
   animationStep(animTime, SECS_COLOR, prevSecondsPixel, secondsPixel);
   animationStep(animTime, MINS_COLOR, prevMinutesPixel, minutesPixel);
@@ -151,11 +163,12 @@ void uniformPixelsColor(uint32_t color) {
   }
 }
 
-void adjustBrightness() {
+byte adjustBrightness() {
   int ldrValue = analogRead(LDR_PIN);
   // Map LDR reading range to neopixel brightness range
   ldrValue = map(ldrValue, LDR_MIN, LDR_MAX, PIXELS_MIN_BRIGHTNESS, PIXELS_MAX_BRIGHTNESS);
   // Constrain value to limits
   ldrValue = constrain(ldrValue, PIXELS_MIN_BRIGHTNESS, PIXELS_MAX_BRIGHTNESS);
   ring.setBrightness(ldrValue);
+  brightness = ldrValue;
 }
