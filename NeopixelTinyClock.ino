@@ -31,10 +31,10 @@ byte prevHoursPixel;
 byte secondsPixel;
 byte minutesPixel;
 byte hoursPixel;
+
 byte brightness;
-
 bool skipFrame;
-
+float animTime; // [0.0, 1.0]
 unsigned long baseTime;
 
 void setup() {
@@ -60,35 +60,35 @@ void setup() {
 
 void loop() {
   skipFrame = false;
-  unsigned long relTime = constrain(millis() - baseTime, (unsigned long)0, (unsigned long)ANIM_DURATION);
+  uint16_t relTime = constrain((uint16_t) (millis() - baseTime), 0, ANIM_DURATION);
   byte animTimeRaw = map(relTime, 0, ANIM_DURATION, 0, 255);
-  float animTime = animTimeRaw / 255.0;
+  animTime = animTimeRaw / 255.0;
   
   adjustBrightness();
   
   // Set background color
   if (map(brightness, PIXELS_MIN_BRIGHTNESS, PIXELS_MAX_BRIGHTNESS, 0, 10)<1) {
     // Really dark environment (<10%)
-    for (uint16_t i=0; i<PIXEL_NUMBER; i++) {
+    for (byte i=PIXEL_NUMBER; i; i--) {
       // color 3, 6, 9 and 12 hours pixels
-      ring.setPixelColor(i, (i % (PIXEL_NUMBER / 4) == 0) ? 0x808080 : 0);
+      ring.setPixelColor(i-1, ((i-1) % (PIXEL_NUMBER / 12) == 0) ? 0x404040 : 0);
     }
   } else {
-    for (uint16_t i=0; i<PIXEL_NUMBER; i++) {
-      ring.setPixelColor(i, 0);
+    for (byte i=PIXEL_NUMBER; i; i--) {
+      ring.setPixelColor(i-1, 0);
     }
   }
   
-  animationStep(animTime, SECS_COLOR, prevSecondsPixel, secondsPixel);
-  animationStep(animTime, MINS_COLOR, prevMinutesPixel, minutesPixel);
-  animationStep(animTime, HOURS_COLOR, prevHoursPixel, hoursPixel);
+  animationStep(SECS_COLOR, prevSecondsPixel, secondsPixel);
+  animationStep(MINS_COLOR, prevMinutesPixel, minutesPixel);
+  animationStep(HOURS_COLOR, prevHoursPixel, hoursPixel);
   
   if (!skipFrame) {
     ring.show();
   }
 }
 
-void animationStep(float animTime, uint32_t color, byte previousPixel, byte currentPixel) {
+void animationStep(uint32_t color, byte previousPixel, byte currentPixel) {
   if (currentPixel == previousPixel) {
     uint32_t currentPixelColor = color | ring.getPixelColor(currentPixel);
     ring.setPixelColor(currentPixel, currentPixelColor);
@@ -98,10 +98,8 @@ void animationStep(float animTime, uint32_t color, byte previousPixel, byte curr
     uint8_t g = color >> 8;
     uint8_t b = color >> 0;
     // Compute respective colors and set them
-    uint32_t previousPixelColor = getRightColorForFrame(r ,g ,b, 1-animTime) | ring.getPixelColor(previousPixel);
-    uint32_t currentPixelColor = getRightColorForFrame(r ,g ,b, animTime) | ring.getPixelColor(currentPixel);
-    ring.setPixelColor(previousPixel, previousPixelColor);
-    ring.setPixelColor(currentPixel, currentPixelColor);
+    ring.setPixelColor(previousPixel, getRightColorForFrame(r ,g ,b, 1-animTime) | ring.getPixelColor(previousPixel));
+    ring.setPixelColor(currentPixel, getRightColorForFrame(r ,g ,b, animTime) | ring.getPixelColor(currentPixel));
   }
 }
 
@@ -109,7 +107,7 @@ uint32_t getRightColorForFrame(byte r, byte g, byte b, float animTime) {
   byte r1 = r * animTime;
   byte g1 = g * animTime;
   byte b1 = b * animTime;
-  return ((uint32_t) (r1 * animTime) << 16) | ((uint32_t)g1 << 8) | b1;
+  return ((uint32_t) (r1 * animTime) << 16) | ((uint16_t)g1 << 8) | b1;
 }
 
 void secondPassed() {
@@ -163,8 +161,8 @@ void uniformPixelsColor(uint32_t color) {
   }
 }
 
-byte adjustBrightness() {
-  int ldrValue = analogRead(LDR_PIN);
+static byte adjustBrightness() {
+  unsigned int ldrValue = analogRead(LDR_PIN);
   // Map LDR reading range to neopixel brightness range
   ldrValue = map(ldrValue, LDR_MIN, LDR_MAX, PIXELS_MIN_BRIGHTNESS, PIXELS_MAX_BRIGHTNESS);
   // Constrain value to limits
