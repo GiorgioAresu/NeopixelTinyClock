@@ -69,9 +69,11 @@ void loop() {
   // Set background color
   if (map(brightness, PIXELS_MIN_BRIGHTNESS, PIXELS_MAX_BRIGHTNESS, 0, 10)<1) {
     // Really dark environment (<10%)
+    // If ring is 60 pixel long then color every hour as a real clock,
+    // otherwise just 3, 6, 9, 12
+    byte mod = (PIXEL_NUMBER == 60) ? 5 : PIXEL_NUMBER / 12;
     for (byte i=PIXEL_NUMBER; i; i--) {
-      // color 3, 6, 9 and 12 hours pixels
-      ring.setPixelColor(i-1, ((i-1) % (PIXEL_NUMBER / 12) == 0) ? 0x404040 : 0);
+      ring.setPixelColor(i-1, ((i-1) % mod == 0) ? 0x404040 : 0);
     }
   } else {
     for (byte i=PIXEL_NUMBER; i; i--) {
