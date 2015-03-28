@@ -105,7 +105,7 @@ uint32_t getRightColorForFrame(byte r, byte g, byte b, float animTime) {
   byte r1 = r * animTime;
   byte g1 = g * animTime;
   byte b1 = b * animTime;
-  return ((uint32_t) (r1 * animTime) << 16) | ((uint16_t)g1 << 8) | b1;
+  return ((uint32_t)r1 << 16) | ((uint16_t)g1 << 8) | b1;
 }
 
 void secondPassed() {
