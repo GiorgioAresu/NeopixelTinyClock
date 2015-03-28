@@ -41,10 +41,6 @@ void setup() {
   ring.begin();
   TinyWireM.begin();
   rtc.begin();
-
-  if (!rtc.isrunning()) {
-         delay(25000);
-  }
   
   // Get the current time
   DateTime n = rtc.now();
