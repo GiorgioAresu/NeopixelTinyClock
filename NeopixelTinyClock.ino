@@ -15,6 +15,7 @@
 #define SECS_COLOR        0x0000ff // Seconds indicator color
 #define MINS_COLOR        0x00ff00 // Minutes indicator color
 #define HOURS_COLOR       0xff0000 // Hours indicator color
+#define WHITE_DOTS_COLOR  0x383838 // Background dots for low light environments. If too low it won't turn on.
 
 RTC_DS1307 rtc;
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(PIXEL_NUMBER, PIXELS_PIN, NEO_GRB + NEO_KHZ800);
@@ -74,7 +75,7 @@ void loop() {
     // otherwise just 3, 6, 9, 12
     byte mod = (PIXEL_NUMBER == 60) ? 5 : PIXEL_NUMBER / 12;
     for (byte i=PIXEL_NUMBER; i; i--) {
-      ring.setPixelColor(i-1, ((i-1) % mod == 0) ? 0x404040 : 0);
+      ring.setPixelColor(i-1, ((i-1) % mod == 0) ? WHITE_DOTS_COLOR : 0);
     }
   } else {
     for (byte i=PIXEL_NUMBER; i; i--) {
