@@ -16,6 +16,7 @@
 #define MINS_COLOR        0x00ff00 // Minutes indicator color
 #define HOURS_COLOR       0xff0000 // Hours indicator color
 #define WHITE_DOTS_COLOR  0x383838 // Background dots for low light environments. If too low it won't turn on.
+#define AUTO_DST              true // Automatically adjust time to european DST
 
 RTC_DS1307 rtc;
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(PIXEL_NUMBER, PIXELS_PIN, NEO_GRB + NEO_KHZ800);
@@ -38,6 +39,7 @@ byte brightness;           // Keep brightness level
 bool skipFrame;            // Skip frame drawing when interrupt updates time while the loop is running
 float animTime;            // [0.0, 1.0]
 unsigned long baseTime;    // Time of the last time update that changed pixels
+bool dst;                  // DST
 
 void setup() {
   // Initialize hardware
@@ -50,8 +52,19 @@ void setup() {
   seconds = n.second();
   minutes = n.minute();
   hours = n.hour();
-  if (hours >= 12) {
-    hours -= 12;
+  if (AUTO_DST) {
+    if (dst = isDST()) {
+      hours +=1;
+    }
+    if (hours >= 24) {
+      hours -= 24;
+    } else if (hours >= 12) {
+      hours -= 12;
+    }
+  } else {
+    if (hours >= 12) {
+      hours -= 12;
+    }
   }
   
   // Attach interrupt to SQW pin to handle seconds passing
@@ -135,7 +148,20 @@ void secondPassed() {
     if (minutes >= 60) {
       // Increment hours
       minutes = 0;
-      hours += 1;
+      
+      if (AUTO_DST) {
+        // Check for DST
+        if (dst == isDST()) {
+          hours += 1;
+        } else {
+          dst != dst;
+          if (dst) {
+            hours += 2;
+          }
+        }
+      } else {
+        hours += 1;
+      }
       
       // Modulo 12
       if (hours >= 12) {
@@ -164,6 +190,32 @@ void secondPassed() {
   if (minutes == 0 && prevHoursPixel == hoursPixel) {
     prevHoursPixel = backupPrevHoursPixel;
   }
+}
+
+bool isDST() {
+  DateTime n = rtc.now();
+  uint8_t dow = n.dayOfWeek();
+  uint8_t day = n.day();
+  uint8_t month = n.month();
+  
+  //January, February, November and December are out.
+  if (month < 3 || month > 10) {
+    return false;
+  }
+  //April to September are in
+  if (month > 3 && month < 10) {
+    return true;
+  }
+  
+  int previousSunday = day - dow;
+  //In March, we are DST if our previous Sunday was on or after the 25th.
+  if (month == 3) {
+    return previousSunday >= 25;
+  }
+  
+  //In October we must be before the last Sunday to be DST.
+  //That means the previous Sunday must be before the 25th.
+  return previousSunday < 25;
 }
 
 void uniformPixelsColor(uint32_t color) {
