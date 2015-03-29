@@ -9,7 +9,7 @@
 #define PIXELS_MAX_BRIGHTNESS  128 // Maximum brightness
 #define LDR_PIN                  2 // Analog PIN number
 #define LDR_MIN                 50 // Minimum brightness threshold
-#define LDR_MAX               1000 // maximum brightness threshold
+#define LDR_MAX               1000 // Maximum brightness threshold
 #define SQW_PIN                  3 // 1Hz square wave pin
 #define ANIM_DURATION         1000 // Duration in ms
 #define SECS_COLOR        0x0000ff // Seconds indicator color
@@ -17,7 +17,7 @@
 #define HOURS_COLOR       0xff0000 // Hours indicator color
 
 RTC_DS1307 rtc;
-Adafruit_NeoPixel ring = Adafruit_NeoPixel(PIXEL_NUMBER, PIXELS_PIN, NEO_GRB + NEO_KHZ800); // ring object
+Adafruit_NeoPixel ring = Adafruit_NeoPixel(PIXEL_NUMBER, PIXELS_PIN, NEO_GRB + NEO_KHZ800);
 
 // Raw time
 byte seconds;
@@ -32,12 +32,14 @@ byte secondsPixel;
 byte minutesPixel;
 byte hoursPixel;
 
-byte brightness;
-bool skipFrame;
-float animTime; // [0.0, 1.0]
-unsigned long baseTime;
+// Other global variables
+byte brightness;           // Keep brightness level
+bool skipFrame;            // Skip frame drawing when interrupt updates time while the loop is running
+float animTime;            // [0.0, 1.0]
+unsigned long baseTime;    // Time of the last time update that changed pixels
 
 void setup() {
+  // Initialize hardware
   ring.begin();
   TinyWireM.begin();
   rtc.begin();
@@ -51,11 +53,14 @@ void setup() {
     hours -= 12;
   }
   
+  // Attach interrupt to SQW pin to handle seconds passing
   attachPcInterrupt(SQW_PIN, secondPassed, FALLING);
 }
 
 void loop() {
   skipFrame = false;
+  
+  // Compute the animation frame
   uint16_t relTime = constrain((uint16_t) (millis() - baseTime), 0, ANIM_DURATION);
   byte animTimeRaw = map(relTime, 0, ANIM_DURATION, 0, 255);
   animTime = animTimeRaw / 255.0;
@@ -77,10 +82,13 @@ void loop() {
     }
   }
   
+  // Animate each "clock arm"
   animationStep(SECS_COLOR, prevSecondsPixel, secondsPixel);
   animationStep(MINS_COLOR, prevMinutesPixel, minutesPixel);
   animationStep(HOURS_COLOR, prevHoursPixel, hoursPixel);
   
+  // Skip frame draw if the interrupt changed interested pixels,
+  // otherwise the animation could glitch
   if (!skipFrame) {
     ring.show();
   }
@@ -102,6 +110,7 @@ void animationStep(uint32_t color, byte previousPixel, byte currentPixel) {
 }
 
 uint32_t getRightColorForFrame(byte r, byte g, byte b, float animTime) {
+  // Fade components appropriately and merge them
   byte r1 = r * animTime;
   byte g1 = g * animTime;
   byte b1 = b * animTime;
@@ -109,6 +118,7 @@ uint32_t getRightColorForFrame(byte r, byte g, byte b, float animTime) {
 }
 
 void secondPassed() {
+  // Update values (keeping them because they need to be restored in some cases)
   byte backupPrevSecondsPixel = prevSecondsPixel;
   byte backupPrevMinutesPixel = prevMinutesPixel;
   byte backupPrevHoursPixel = prevHoursPixel;
@@ -125,6 +135,8 @@ void secondPassed() {
       // Increment hours
       minutes = 0;
       hours += 1;
+      
+      // Modulo 12
       if (hours >= 12) {
         hours = 0;
       }
