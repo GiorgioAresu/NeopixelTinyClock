@@ -102,9 +102,9 @@ void loop() {
   }
   
   // Animate each clock arm
+  animationStep(SECS_COLOR, prevSecondsPixel, secondsPixel, SECS_SHADE_RADIUS);
   animationStep(HOURS_COLOR, prevHoursPixel, hoursPixel, HOURS_SHADE_RADIUS);
   animationStep(MINS_COLOR, prevMinutesPixel, minutesPixel, MINS_SHADE_RADIUS);
-  animationStep(SECS_COLOR, prevSecondsPixel, secondsPixel, SECS_SHADE_RADIUS);
   
   // Skip frame draw if the interrupt changed interested pixels,
   // otherwise the animation could glitch
